@@ -18,6 +18,11 @@ end
 clc;
 format short g
 
+%% Select the grammar to use
+% either one of: ["original", "improved"]
+grammarType = "original";
+grammarType = "improved";
+
 %% Parameters (modify below as you see fit)
 % building blocks for heuristics
 % (each element of cell a string containing the paths to chunks)
@@ -38,7 +43,7 @@ tic
 % loop for all possible combainations of the array variables above
 for tI = 1:numTrials
     % run a trial with the specified parameters
-    sahTrial(domain, 1, hChunkFiles, tI, verbose);
+    sahTrial(domain, 1, hChunkFiles, tI, grammarType, verbose);
 end
 
 % time record stops here

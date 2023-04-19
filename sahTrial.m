@@ -1,4 +1,4 @@
-function sahTrial(domain, budgetI, hChunkFiles, trialI, verbose)
+function sahTrial(domain, budgetI, hChunkFiles, trialI, grammarType, verbose)
 %% Synthesize A+H : map(s) and a single trial
 % no evaluation on full sets
 % Vadim Bulitko
@@ -16,6 +16,7 @@ arguments
     budgetI (1,1) uint64
     hChunkFiles (1,:) cell % building blocks for heuristics
     trialI (1,1) uint64 % index of trial
+	grammarType (1,1) string = "original"
     verbose (1,1) logical = false
 end
 
@@ -79,8 +80,15 @@ oneRunBMDtt = tic;
 % synthesis with the unified code
 mapsIArr = domain.mapI_cell_arr{budgetI};
 expandedBudget = domain.per_map_budget;
-[ah, synthesisTime] = synthesizeAHmapBottomUp(domain, expandedBudget,...
-    subopt, expanded, synH);
+
+switch (grammarType)
+	case ("original")
+		[ah, synthesisTime] = synthesizeAHmapBUS(domain, expandedBudget,...
+    		subopt, expanded, synH);
+	case ("improved")
+		[ah, synthesisTime] = synthesizeAHmapBUSBetter(domain, expandedBudget,...
+    		subopt, expanded, synH);
+end
    
 if (verbose)
     % display the time it took and the number of champion updates

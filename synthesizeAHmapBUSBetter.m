@@ -1,4 +1,4 @@
-function [ah, synthesisTime] = synthesizeAHmapBottomUp(domain, budget, suboptM, expandedM, synH)
+function [ah, synthesisTime] = synthesizeAHmapBUSBetter(domain, budget, suboptM, expandedM, synH)
 %% Synthesize A+H for a given single map using bottom up search (from Levi's pseudocode)
 % Takes two sets of problems and returns a single best a+h combination
 % Shway Wang
