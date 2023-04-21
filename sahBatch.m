@@ -11,7 +11,7 @@ arguments
     % DomainPathFnd({[<mapIndices>], <mapIArrays>}, <numProblemsLowerBound>)
     % DomainSlideTile(<budget>)
     % ]
-    domain (1,1) Domain = DomainPathFnd({[1]}, 1)
+    domain (1,1) Domain = DomainPathFnd({[1]}, 3)
 end
 
 % matlab initialization
@@ -19,9 +19,10 @@ clc;
 format short g
 
 %% Select the grammar to use
-% either one of: ["original", "improved"]
-grammarType = "original";
-grammarType = "improved";
+% either one of: ["original", "improved", "restrict"]
+%grammarType = "original";
+%grammarType = "improved";
+grammarType = "restrict";
 
 %% Parameters (modify below as you see fit)
 % building blocks for heuristics
@@ -34,17 +35,12 @@ hChunkFiles = {
 verbose = true;
 
 %% the trial loop and other setting that are almost always fixed
-% if on Compute Canada, this script runs only 1 trial
-numTrials = 1;
-
 % start recording the total time it takes
 tic
 
 % loop for all possible combainations of the array variables above
-for tI = 1:numTrials
-    % run a trial with the specified parameters
-    sahTrial(domain, 1, hChunkFiles, tI, grammarType, verbose);
-end
+% run a trial with the specified parameters
+sahTrial(domain, 1, hChunkFiles, grammarType, verbose);
 
 % time record stops here
 toc

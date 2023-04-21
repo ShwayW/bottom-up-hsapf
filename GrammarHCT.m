@@ -11,7 +11,7 @@ classdef GrammarHCT
     properties (Access = public)
         T = ["x1", "y1", "x2", "y2", "deltaX", "deltaY"];
         U = ["sqrt", "abs", "neg", "sqr"];
-        B = ["+", "-", "*", "/", "max", "min"];
+        B = ["+", "-", "*", "/", "max"];
     end
 
     % methods include the constructor that appends possible building blocks
@@ -26,11 +26,14 @@ classdef GrammarHCT
             end
 
             % append to Terminals the building blocks
-            if (nargin > 0)
-                for i = 1:length(synH)
-                    obj.T = [obj.T, sprintf("synH{%d}(x1,y1,x2,y2)", i)];
-                end
-            end
+			if (nargin > 0)
+				for i = 1:length(synH)
+					obj.T = [obj.T, sprintf("synH{%d}(x1,y1,x2,y2)", i)];
+				end
+			end
+			
+			% add the constants to the set of terminals as well
+			obj.T = [obj.T, 2];
         end
 
         function hct = randomHCT(self, hctSize)

@@ -97,7 +97,8 @@ for pI = 1:length(domain.problemSets)
 
     % stop watch for the time of discarding unfits ends here if the showGenTime flag is set to true
     if (showGenTime)
-        fprintf('pI = %d evaluate time: %s\n', pI, sec2str(toc(discardUnfitsTime))); %#ok<*UNRCH>
+        fprintf('pI = %d evaluate time: %s loss = %0.4f\n', pI,...
+			sec2str(toc(discardUnfitsTime)), currentElites(popI).regloss); %#ok<*UNRCH>
     end
 
     % assign elites' info to the population accordingly

@@ -1,4 +1,4 @@
-function sahTrial(domain, budgetI, hChunkFiles, trialI, grammarType, verbose)
+function sahTrial(domain, budgetI, hChunkFiles, grammarType, verbose)
 %% Synthesize A+H : map(s) and a single trial
 % no evaluation on full sets
 % Vadim Bulitko
@@ -15,22 +15,11 @@ arguments
     domain (1,1) Domain
     budgetI (1,1) uint64
     hChunkFiles (1,:) cell % building blocks for heuristics
-    trialI (1,1) uint64 % index of trial
 	grammarType (1,1) string = "original"
     verbose (1,1) logical = false
 end
 
 %% Preliminaries
-%{
-% get the random seed from time
-rng('shuffle');
-x = rng;
-seed = x.Seed;
-
-% mix in mapI and trialI
-seedNew = double(seed) + trialI;
-rng(seedNew);
-%}
 seed = 0;
 rng(seed);
 
@@ -39,10 +28,9 @@ domain = domain.loadProblemSet("psf", verbose);
 
 % print the information
 if (verbose)
-    mapsIArr = domain.mapI_cell_arr{budgetI};
     fprintf('---- PSF -------------------------------------\n');
-    fprintf('\tusing %d map(s)\n\t%s goals on each\n\t%s starts for each goal\n\t%s problems/map\n',...
-        length(mapsIArr), hrNumber(domain.psf.numGoals), hrNumber(domain.psf.numStarts),...
+    fprintf('\tusing 1 map\n\t%s goals on each\n\t%s starts for each goal\n\t%s problems/map\n',...
+        hrNumber(domain.psf.numGoals), hrNumber(domain.psf.numStarts),...
         hrNumber(domain.psf.numGoals * domain.psf.numStarts));
 end
 
@@ -69,16 +57,14 @@ domain = domain.initTriageProblems(budgetI, 1);
 %% Run the trial using the input synthesis method on smaller training data
 % run synthesis
 if (verbose)
-	mapsIArr = domain.mapI_cell_arr{budgetI};
-	fprintf('\n\n============= %d maps of %d sets ============\n', length(mapsIArr), length(domain.setNames));
-	fprintf('\nRunning A+H synthesis on %d maps of %d sets\n', length(mapsIArr), length(domain.setNames));
+	fprintf('\n\n============= 1 map of %d sets ============\n', length(domain.setNames));
+	fprintf('\nRunning A+H synthesis on 1 map of %d sets\n', length(domain.setNames));
 end
 
 % start the time count
 oneRunBMDtt = tic;
 
 % synthesis with the unified code
-mapsIArr = domain.mapI_cell_arr{budgetI};
 expandedBudget = domain.per_map_budget;
 
 switch (grammarType)
@@ -87,6 +73,9 @@ switch (grammarType)
     		subopt, expanded, synH);
 	case ("improved")
 		[ah, synthesisTime] = synthesizeAHmapBUSBetter(domain, expandedBudget,...
+    		subopt, expanded, synH);
+	case ("restrict")
+		[ah, synthesisTime] = synthesizeAHmapBUSRestrict(domain, expandedBudget,...
     		subopt, expanded, synH);
 end
    
@@ -121,39 +110,6 @@ if (verbose)
         hctSize(ah.alg.hct), ah.psfregloss, sec2str(psftime));
     fprintf('\n');
 end
-
-%% Wrap up and save the results
-% make the directory name based on the parameters past in
-directoryName = makeResultsDirPath(domain, budgetI, ~isempty(hChunkFiles));
-
-% generate the full name: directoryName/map_set_%d <= appended
-directoryName = getMapCombsFolderName(directoryName, mapsIArr, domain.maxMaps);
-
-% create the directory if it does not exist
-if(~isfolder(directoryName))
-    mkdir(directoryName);
-end
-
-% generate the name of the output binary file
-fileName = sprintf('sahPSF_trial%d_seed%d.mat', trialI, seed);
-
-% keeping only the fields 'numGoals' and 'numStarts' for small training sets
-for psI = 1:length(domain.problemSets)
-    ps = domain.problemSets{psI};
-    ps = rmfield(ps, setdiff(fieldnames(ps), {'numGoals', 'numStarts'}));
-    domain.problemSets{psI} = ps;
-end
-
-% keeping only the fields 'numGoals', 'numStarts', 'numMaps' and 'mapNames' for psf
-domain.psf = rmfield(domain.psf, setdiff(fieldnames(domain.psf), {'numGoals', 'numStarts', 'numMaps', 'mapNames'}));
-
-% save the result
-psf = domain.psf;
-problemSets = domain.problemSets;
-setNames = domain.setNames;
-save(append(directoryName, '/', fileName),...
-    'ah', 'problemSets', 'psf', 'setNames', 'expandedBudget', 'trialI', 'seed',...
-    'loadedBaseline', 'synthesisTime', "setNames", 'psftime', 'hChunkFiles', 'synH');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Aux Funcs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

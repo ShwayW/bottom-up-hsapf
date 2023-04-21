@@ -1,4 +1,4 @@
-function [ah, synthesisTime] = synthesizeAHmapBUS(domain, budget, suboptM, expandedM, synH)
+function [ah, synthesisTime] = synthesizeAHmapBUSRestrict(domain, budget, suboptM, expandedM, synH)
 %% Synthesize A+H for a given single map using bottom up search (from Levi's pseudocode)
 % Takes two sets of problems and returns a single best a+h combination
 % Shway Wang
@@ -119,7 +119,6 @@ else
 end
 
 fprintf("New program list size: %d\n", length(nplist));
-%disp(nplist);
 
 % test to see if there is a better historical champion in the new list of programs
 for nplistI = 1:length(nplist)
@@ -149,7 +148,7 @@ end
 
 %% Preliminaries
 % get all the binary operators
-ops = grammar.B;
+bins = grammar.B;
 
 % loop once to get the number of programs to increase
 sizeCounter = 0;
@@ -157,17 +156,32 @@ for plistI = 1:length(plist)
     % get the root node's id for each code tree
     hctA = plist(plistI);
     hctALen = hctSize(hctA);
+	[headA, ~] = getHeadAndInputs(hctA);
 
     % add each operator in ops as the root node for the existing code tree
-    for opI = 1:length(ops)
+    for opI = 1:length(bins)
+		op = bins(opI);
+
         % form a new tree with every code tree from the program list by every binary operator from ops
         parfor plistJ = 1:length(plist)
             hctB = plist(plistJ);
             hctBLen = hctSize(hctB);
+			[headB, ~] = getHeadAndInputs(hctB);
 
             % construct new code tree only if requirement tree size met
-            if (isequal(hctALen + hctBLen + 1, targetHLen))
-                sizeCounter = sizeCounter + 1;
+            if (isequal(hctALen + hctBLen + 1, targetHLen) && ~isequal(hctA, hctB))
+				addFlag = true;
+				if (isequal(op, "-") && isequal(headB, "neg"))
+					addFlag = false;
+				elseif (isequal(op, "*") && isequal(headA, "neg") && isequal(headB, "neg"))
+					addFlag = false;
+				elseif (isequal(op, "/") && isequal(headA, "neg") && isequal(headB, "neg"))
+					addFlag = false;
+				end
+				
+				if (addFlag)
+					sizeCounter = sizeCounter + 1;
+				end
             end
         end
     end
@@ -182,21 +196,34 @@ for plistI = 1:length(plist)
     % get the root node's id for each code tree
     hctA = plist(plistI);
     hctALen = hctSize(hctA);
+	[headA, ~] = getHeadAndInputs(hctA);
 
     % add each operator in ops as the root node for the existing code tree
-    for opI = 1:length(ops)
-        op = ops(opI);
+    for opI = 1:length(bins)
+        op = bins(opI);
 
         % form a new tree with every code tree from the program list by every binary operator from ops
         for plistJ = 1:length(plist)
             hctB = plist(plistJ);
             hctBLen = hctSize(hctB);
+			[headB, ~] = getHeadAndInputs(hctB);
 
             % construct new code tree only if requirement tree size met
-            if (isequal(hctALen + hctBLen + 1, targetHLen))
-                nct = sprintf("(%s %s %s)", op, hctA, hctB);
-                nplist(counter) = nct;
-                counter = counter + 1;
+            if (isequal(hctALen + hctBLen + 1, targetHLen) && ~isequal(hctA, hctB))
+				addFlag = true;
+				if (isequal(op, "-") && isequal(headB, "neg"))
+					addFlag = false;
+				elseif (isequal(op, "*") && isequal(headA, "neg") && isequal(headB, "neg"))
+					addFlag = false;
+				elseif (isequal(op, "/") && isequal(headA, "neg") && isequal(headB, "neg"))
+					addFlag = false;
+				end
+
+				if (addFlag)
+					nct = sprintf("(%s %s %s)", op, hctA, hctB);
+            		nplist(counter) = nct;
+            		counter = counter + 1;
+				end
             end
         end
     end
@@ -216,7 +243,9 @@ arguments
 end
 
 % get all the unary operators
+terms = grammar.T;
 ops = grammar.U;
+bins = grammar.B;
 
 % compute the total number of programs
 sizeCounter = 0;
@@ -226,11 +255,36 @@ for plistI = 1:length(plist)
     % get the root node's id for each code tree
     hct = plist(plistI);
     ctLen = hctSize(hct);
+	[head, ~] = getHeadAndInputs(hct);
 
     % add each operator in ops as the root node for the existing code tree
     parfor opI = 1:length(ops)
         if (isequal(ctLen + 1, targetHLen))
-            sizeCounter = sizeCounter + 1;
+			addFlag = false;
+			switch (ops(opI))
+				case ("sqrt")
+					if (isequal(head, "sqrt") || isequal(head, "abs")...
+							|| ismember(head, terms) || ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("abs")
+					if (ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("neg")
+					if (isequal(head, "sqrt") || isequal(head, "sqr")...
+							|| ismember(head, bins) || ismember(head, terms))
+						addFlag = true;
+					end
+				case ("sqr")
+					if (isequal(head, "sqr") || ismember(head, bins)...
+							|| ismember(head, terms))
+						addFlag = true;
+					end
+			end
+			if (addFlag)
+				sizeCounter = sizeCounter + 1;
+			end
         end
     end
 end
@@ -244,13 +298,38 @@ for plistI = 1:length(plist)
     % get the root node's id for each code tree
     hct = plist(plistI);
     ctLen = hctSize(hct);
+	[head, ~] = getHeadAndInputs(hct);
 
     % add each operator in ops as the root node for the existing code tree
     for opI = 1:length(ops)
         if (isequal(ctLen + 1, targetHLen))
-            nct = sprintf("(%s %s)", ops(opI), hct);
-            nplist(counter) = nct;
-            counter = counter + 1;
+			addFlag = false;
+			switch (ops(opI))
+				case ("sqrt")
+					if (isequal(head, "sqrt") || isequal(head, "abs")...
+							|| ismember(head, terms) || ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("abs")
+					if (ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("neg")
+					if (isequal(head, "sqrt") || isequal(head, "sqr")...
+							|| ismember(head, bins) || ismember(head, terms))
+						addFlag = true;
+					end
+				case ("sqr")
+					if (isequal(head, "sqr") || ismember(head, bins)...
+							|| ismember(head, terms))
+						addFlag = true;
+					end
+			end
+			if (addFlag)
+				nct = sprintf("(%s %s)", ops(opI), hct);
+				nplist(counter) = nct;
+				counter = counter + 1;
+			end
         end
     end
 end

@@ -15,7 +15,7 @@ end
 %% Preliminaries
 % verbose flags
 showChampion = true;
-showEval = true;
+showEval = false;
 
 %% Initializations
 % initialize the total number of state expanded
@@ -94,6 +94,18 @@ grammar = GrammarHCT(synH);
 nplist = [];
 if (isempty(plist))
     nplist = grammar.T;
+
+	% test to see if there is a better historical champion in the new list of programs
+	for nplistI = 1:length(nplist)
+    	% Evaluate plist(plistI) on ps to produce the ahPair struct
+    	[ahPair, totalExpanded] = evaluateHeuristicFormula(domain, nplist, nplistI,...
+        	totalExpanded, suboptM, expandedM, showEval, synH);
+	
+		% test for functional equivalence and add to outputs and plist
+		outputs = [outputs, ahPair.regloss]; %#ok<AGROW>
+		plist = [plist, nplist(nplistI)]; %#ok<AGROW>
+	end
+	return;
 else
     % let each operator to grow the plist and append the results to nplist
     % uniary operators: [sqrt, abs, negation, sqr]
@@ -105,6 +117,9 @@ else
     % for the new program list
     nplist = [nplist, unaryList, binaryList];
 end
+
+fprintf("New program list size: %d\n", length(nplist));
+%disp(nplist);
 
 % test to see if there is a better historical champion in the new list of programs
 for nplistI = 1:length(nplist)
@@ -201,7 +216,9 @@ arguments
 end
 
 % get all the unary operators
+terms = grammar.T;
 ops = grammar.U;
+bins = grammar.B;
 
 % compute the total number of programs
 sizeCounter = 0;
@@ -211,11 +228,36 @@ for plistI = 1:length(plist)
     % get the root node's id for each code tree
     hct = plist(plistI);
     ctLen = hctSize(hct);
+	[head, ~] = getHeadAndInputs(hct);
 
     % add each operator in ops as the root node for the existing code tree
     parfor opI = 1:length(ops)
         if (isequal(ctLen + 1, targetHLen))
-            sizeCounter = sizeCounter + 1;
+			addFlag = false;
+			switch (ops(opI))
+				case ("sqrt")
+					if (isequal(head, "sqrt") || isequal(head, "abs")...
+							|| ismember(head, terms) || ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("abs")
+					if (ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("neg")
+					if (isequal(head, "sqrt") || isequal(head, "sqr")...
+							|| ismember(head, bins) || ismember(head, terms))
+						addFlag = true;
+					end
+				case ("sqr")
+					if (isequal(head, "sqr") || ismember(head, bins)...
+							|| ismember(head, terms))
+						addFlag = true;
+					end
+			end
+			if (addFlag)
+				sizeCounter = sizeCounter + 1;
+			end
         end
     end
 end
@@ -229,13 +271,38 @@ for plistI = 1:length(plist)
     % get the root node's id for each code tree
     hct = plist(plistI);
     ctLen = hctSize(hct);
+	[head, ~] = getHeadAndInputs(hct);
 
     % add each operator in ops as the root node for the existing code tree
     for opI = 1:length(ops)
         if (isequal(ctLen + 1, targetHLen))
-            nct = sprintf("(%s %s)", ops(opI), hct);
-            nplist(counter) = nct;
-            counter = counter + 1;
+			addFlag = false;
+			switch (ops(opI))
+				case ("sqrt")
+					if (isequal(head, "sqrt") || isequal(head, "abs")...
+							|| ismember(head, terms) || ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("abs")
+					if (ismember(head, bins))
+            			addFlag = true;
+					end
+				case ("neg")
+					if (isequal(head, "sqrt") || isequal(head, "sqr")...
+							|| ismember(head, bins) || ismember(head, terms))
+						addFlag = true;
+					end
+				case ("sqr")
+					if (isequal(head, "sqr") || ismember(head, bins)...
+							|| ismember(head, terms))
+						addFlag = true;
+					end
+			end
+			if (addFlag)
+				nct = sprintf("(%s %s)", ops(opI), hct);
+				nplist(counter) = nct;
+				counter = counter + 1;
+			end
         end
     end
 end
@@ -275,7 +342,8 @@ if (showEval)
     fprintf('evaluating heuristic %d/%d: %s\n', plistI, length(plist), hct);
 end
 
-[ahPair, totalExpanded] = triageEvaluation(domain, ahPair, totalExpanded, suboptM, expandedM, synH);
+[ahPair, totalExpanded] = triageEvaluation(domain, ahPair, totalExpanded, suboptM,...
+	expandedM, synH, showEval);
 end
 
 

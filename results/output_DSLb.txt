@@ -1,0 +1,87 @@
+loaded final problem set: problems/randomA-100x100.mat
+---- PSF -------------------------------------
+	using 1 map(s)
+	100 goals on each
+	100 starts for each goal
+	10.0K problems/map
+loaded baseline: results/baseline/baseline_non-real-time_randomA_100x100.mat
+
+Loaded the baseline results: 91 alg configurations
+
+---- Generated PS #1 -------------------------------------
+	using 1 map(s)
+	3 goals on each
+	3 starts for each goal
+	9 problems/map
+
+
+
+============= 1 maps of 1 sets ============
+
+Running A+H synthesis on 1 maps of 1 sets
+size of program list: 7, tree level: 1
+
+Current best:
+x
+x1
+current best ps training loss: 33.604582
+
+
+Current best:
+\Delta x
+deltaX
+current best ps training loss: 22.191399
+
+New program list size: 21
+size of program list: 19, tree level: 2
+
+Current best:
+\left(\Delta x\right)^2
+(sqr deltaX)
+current best ps training loss: 11.522427
+
+New program list size: 261
+size of program list: 120, tree level: 3
+
+Current best:
+\left(\left(\Delta x\right)^2\right)^2
+(sqr (sqr deltaX))
+current best ps training loss: 3.946057
+
+
+Current best:
+\Delta x \cdot \Delta y
+(* deltaX deltaY)
+current best ps training loss: 2.844201
+
+New program list size: 1196
+size of program list: 624, tree level: 4
+
+Current best:
+\left(\left(\Delta x + \Delta y\right)\right)^2
+(sqr (+ deltaX deltaY))
+current best ps training loss: 1.126580
+
+
+Current best:
+\left(\max\left\{\Delta x,\Delta y\right\}\right)^2
+(sqr (max deltaX deltaY))
+current best ps training loss: 1.113893
+
+New program list size: 9146
+size of program list: 3773, tree level: 5
+
+Current best:
+\left(\left(\Delta x\right)^2 + \left(\Delta y\right)^2\right)
+(+ (sqr deltaX) (sqr deltaY))
+current best ps training loss: 0.302026
+
+	... 29.4 m | 1 a+h pairs
+	synthesis took: Inf state exansions | 29.4 m
+	\text{A*}
+	\left(\left(\Delta x\right)^2 + \left(\Delta y\right)^2\right)
+	size 5 | regularized loss 0.30
+
+	PSF: size 5 | reg loss 0.16 | psf eval time 0.70 s
+
+Elapsed time is 1766.544671 seconds.
